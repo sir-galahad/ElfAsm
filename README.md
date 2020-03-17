@@ -6,6 +6,7 @@ Having never written an assembler before I have two phases for the goals I wish 
 
 
 Phase 1:
+
 	1. Support all 1802 Nmemonics.
 	
 	2. Support lables.
@@ -16,6 +17,7 @@ Phase 1:
 	
   
 Phase 2:
+
 	1. Support macros
 	
 	2. Support built time expresssion solving
