@@ -3,6 +3,8 @@ Assembler for the 1802 processor
 
 Goals:
 Having never written an assembler before I have two phases for the goals I wish to meet the first phase should allow the most basic functionality. While the second phase will add significant quality of life improvements
+
+
 Phase 1:
 	1. Support all 1802 Nmemonics.
 	2. Support lables.
