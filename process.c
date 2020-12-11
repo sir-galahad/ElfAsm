@@ -159,6 +159,11 @@ int main(int argc, char *argv[])
 	char outputfile[256];
 	int i;
 	
+	if(argc == 1){
+		fprintf(stderr, "no source file specified\n");
+		return -1;	
+	}
+
 	strncpy(outputfile,inputfile,256);
 	
 	for(i = 0; outputfile[i]!='\0' && outputfile[i] != '.'; i++);
