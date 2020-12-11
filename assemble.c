@@ -4,14 +4,14 @@
 #include "mnemonics.h"
 #include "symbol.h"
 #include "ctype.h"
-int get_argint(const char *arg, int type, int addr, symbol *symbol_table)
+int get_argint(const char *arg, mnemonic *mne, int addr, symbol *symbol_table)
 {
 	
 	int output = 0;
 	int count;
 	char *endptr;
 	symbol *sym;
-	switch(type) {
+	switch(mne->type) {
 		case none:
 			output = -1;
 			break;
@@ -51,7 +51,18 @@ int get_argint(const char *arg, int type, int addr, symbol *symbol_table)
 					output = -1;
 				} else {
 					if(arg[0] == '^') output = (sym->address >> 8);
-					if(arg[0] == '_') output = (sym->address & 0xff);
+					if(arg[0] == '_') {
+						output = (sym->address & 0xff);
+						if( mne->isshortbranch && 
+						  ((addr+1) &0xff00) != (sym->address & 0xff00)){
+							fprintf(
+								stderr, 
+								"WARNING: short jump to low byte of symbol on a different page\n"
+							);
+							printf("%x vs %x\n",address + 1, sym->address);
+						}		
+					}
+					
 				}
 				break;
 			}
@@ -104,12 +115,12 @@ int get_argint(const char *arg, int type, int addr, symbol *symbol_table)
 int mnemonic_getbytes(mnemonic *mne, unsigned char *buffer, char *arg, int addr, symbol *symbol_table)
 {
 	int argint;
-	
+	int index;	
 	if(mne->type!=none) {
-		argint = get_argint(arg,mne->type,addr,symbol_table);
+		argint = get_argint(arg,mne,addr,symbol_table);
 		if(argint < 0) return -1;
 	}
-	
+	index = 0;
 	switch(mne->type) {
 		case none:
 			buffer[0] = mne->opbase;
@@ -118,14 +129,18 @@ int mnemonic_getbytes(mnemonic *mne, unsigned char *buffer, char *arg, int addr,
 			buffer[0] = (unsigned char)(mne->opbase | argint);
 			break;
 		case byte:
-			buffer[0] = mne->opbase;
-			buffer[1] = (unsigned char)(argint);
+			if(strcmp(mne->name, "DB")) { //if not DB include the base
+				buffer[index++] = mne->opbase;
+			}
+			buffer[index++] = (unsigned char)(argint);
 			break;
 		case address:
-			buffer[0] = mne->opbase;
+			if(strcmp(mne->name, "DD")) { //if not DD include the base
+				buffer[index++] = mne->opbase;
+			}
 			//masking the high byte shouldn't be necessary
-			buffer[1] = (unsigned char)((argint>>8) & 0xff);
-			buffer[2] = (unsigned char)(argint & 0xff);
+			buffer[index++] = (unsigned char)((argint>>8) & 0xff);
+			buffer[index++] = (unsigned char)(argint & 0xff);
 	}
 	return mne->opsize;
 }

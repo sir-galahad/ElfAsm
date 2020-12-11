@@ -63,7 +63,7 @@ int process(const char* inputfile, const char* outputfile)
 	char empty[] = "";
 	char buffer[10];
 	unsigned char line[512];
-	int i;
+	int i,tmp;
 	symbol *sym;
 
 	if(output == NULL) {
@@ -85,17 +85,29 @@ int process(const char* inputfile, const char* outputfile)
 			data.label=NULL;
 			data.mnemonic=NULL;
 			data.arg=empty;
-	
+			mnemonic *mne = NULL;
 			split_line(line,&data);
-	
-			mnemonic *mne = get_mnemonic_data(data.mnemonic);
-			if(mne == NULL) {
-				fprintf(stderr, "%s:%d : no such mnemonic: %s\n", 
-					inputfile, 
-					linenum, 
-					data.mnemonic
-				);
-				return -1;
+			if(data.mnemonic != NULL) {
+				mne = get_mnemonic_data(data.mnemonic);
+				if(mne == NULL) {
+					fprintf(stderr, "%s:%d : no such mnemonic: %s\n", 
+						inputfile, 
+						linenum, 
+						data.mnemonic
+					);
+					return -1;
+				}
+				if( strcmp(mne->name, "ORG")==0 ) {
+					tmp=get_argint(data.arg, mne, address, symbol_table);
+					if(tmp >= 0) address=tmp;
+					else {
+						fprintf(
+							stderr,"%s:%d ERROR bad argument to ORG",
+							inputfile,
+							linenum
+						);
+					}
+				}
 			}
 			
 			if(i == 0) {
@@ -116,7 +128,7 @@ int process(const char* inputfile, const char* outputfile)
 				}
 			}
 			
-			if(i == 1){
+			if(i == 1 && mne != NULL){
 				printf(
 					"%s:%d %s %s\n",
 					inputfile,
@@ -130,8 +142,9 @@ int process(const char* inputfile, const char* outputfile)
 				}
 				fwrite(buffer, mne->opsize, 1, output);
 			}
-			
-			address += mne->opsize;
+			if(mne != NULL) {
+				address += mne->opsize;
+			}
 		}
 		fclose(input);
 	}

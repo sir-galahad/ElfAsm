@@ -129,7 +129,12 @@ mnemonic mnemonics[] =
 	{"IN5",1,none,0x6d,0},
 	{"IN6",1,none,0x6e,0},
 	{"IN7",1,none,0x6f,0},
-
+	
+	//Pseudo OPs
+	
+	{"ORG",0,address,0,0},
+	{"DB",1,byte,0,0},
+	{"DD",2,address,0,0},
 	//Mark the end of the array
 	{"\0",0,none,0,0}
 ,0};
