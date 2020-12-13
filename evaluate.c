@@ -63,7 +63,6 @@ int evaluate(const char *exp, symbol *symbol_table)
 	char *endptr;
 	symbol *sym;
 	for(i = 0; exp[i] != '\0'; i++) {
-		printf("%d = %c\n",i,exp[i]);
 		if( exp[i] == '\t' || exp[i]  == ' ' || exp[i] == '\n') continue;
 		if( exp[i] == ')' ) {
 			fprintf(stderr, "ERROR unmatched closing parenthesis\n");
@@ -112,14 +111,13 @@ int evaluate(const char *exp, symbol *symbol_table)
 		}
 
 		if(exp[i] == '^' || exp[i] == '_') {
-			sym = symbol_search(symbol_table, &exp[i+1]);
+			sym = symbol_search(symbol_table, &exp[i+1], 1);
 			if(sym == NULL) {
 				fprintf(stderr, "ERROR: byte specifier used without symbol\n");
 				exit(1);
 			} else {
 				if(exp[i] == '^') num = (sym->address >> 8);
 				if(exp[i] == '_') num = (sym->address & 0xff);
-				printf("symbol = %d\n",num);
 				el=expel_new(0,num);
 				if(head == NULL) head=el;
 				if(tail == NULL) tail=el;
@@ -133,13 +131,12 @@ int evaluate(const char *exp, symbol *symbol_table)
 		}
 		
 		if( isalpha(exp[i] )) {
-			sym = symbol_search(symbol_table, &exp[i]);
+			sym = symbol_search(symbol_table, &exp[i], 1);
 			if(sym == NULL) {
 				fprintf(stderr, "ERROR: alphabeta characters not a symbol\n");
 				exit(1);
 			} else {
 				num = sym->address;
-				printf("my symbol = %d\n",num);
 				el=expel_new(0,num);
 				if(head == NULL) head=el;
 				if(tail == NULL) tail=el;
@@ -159,7 +156,6 @@ int evaluate(const char *exp, symbol *symbol_table)
 		
 		num = strtol(&exp[i], &endptr,0);
 		if(endptr != &exp[i]){
-			printf("number = %d\n",num);
 			el=expel_new(0,num);
 			if(head == NULL) head=el;
 			if(tail == NULL) tail=el;
@@ -182,12 +178,10 @@ int evaluate(const char *exp, symbol *symbol_table)
 				switch(i) {
 					case 0:
 						if(el->next->value == multiply){
-							printf("%d*%d\n",el->value,el->next->next->value);
 							el->value *= el->next->next->value;
 							valuechanged = 1;
 						}
 						if(el->next->value == divide){
-							printf("%d/%d\n",el->value,el->next->next->value);
 							el->value /= el->next->next->value;
 							valuechanged = 1;
 						}
@@ -201,13 +195,10 @@ int evaluate(const char *exp, symbol *symbol_table)
 						break;
 					case 1:
 						if(el->next->value == add){
-							printf("%d+%d\n",el->value,el->next->next->value);
 							el->value += el->next->next->value;
-							printf("%d\n", el->value);
 							valuechanged = 1;
 						}
 						if(el->next->value == subtract){
-							printf("%d-%d\n",el->value,el->next->next->value);
 							el->value -= el->next->next->value;
 							valuechanged = 1;
 						}
@@ -226,7 +217,6 @@ int evaluate(const char *exp, symbol *symbol_table)
 	}
 	i = head->value;
 	free(head);
-	printf("returning %d\n",i);
 	return i;
 }
 

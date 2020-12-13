@@ -13,6 +13,6 @@ typedef struct _symbol
 
 symbol *symbol_new(const char* name, unsigned int address);
 void symbol_destroy(symbol *sym);
-symbol *symbol_search(symbol *first, const char *name);
-
+symbol *symbol_search(symbol *first, const char *name, int lazy);
+void symbol_table_insert(symbol **symbol_table, symbol *sym);
 #endif

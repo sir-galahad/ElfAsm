@@ -4,7 +4,7 @@ elfasm : process.o assemble.o mnemonics.o symbol.o evaluate.o
 	$(CC) $^ -o $@
 
 %.o : %.c
-	$(CC) $< -c
+	$(CC) $< -c -g
 
 
 clean : 

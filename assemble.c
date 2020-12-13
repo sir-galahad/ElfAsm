@@ -47,7 +47,6 @@ int get_argint(const char *arg, mnemonic *mne, int addr, symbol *symbol_table)
 	
 		default:
 			output = evaluate(arg, symbol_table);
-			printf("output = %d\n",output);
 			if(mne->type ==byte){
 				if(output > 255 || output < 0) {
 					output = -1;

@@ -33,7 +33,7 @@ int split_line(char *line, linedata *data)
 			endline = 1;
 		}
 
-		if(inword && !isalnum(line[i]) && line[i]){
+		if(inword && !isalnum(line[i]) && line[i] != '_' && line[i]){
 			if(data->mnemonic == NULL && line[i] == ':'){
 				data->label = start;
 				line[i]='\0';
@@ -114,7 +114,7 @@ int process(const char* inputfile, const char* outputfile)
 			
 			if(i == 0) {
 				if(data.label != NULL) {
-					if(symbol_search(symbol_table, data.label) != NULL) {
+					if(symbol_search(symbol_table, data.label, 0) != NULL) {
 						fprintf(
 							stderr, 
 							"line %d symbol '%s' defined more than once\n",
@@ -123,10 +123,10 @@ int process(const char* inputfile, const char* outputfile)
 						);
 						return -1;
 					}
-
+					
+					printf("adding symbol: %s\n",data.label);
 					sym=symbol_new(data.label, address);
-					sym->next = symbol_table;
-					symbol_table = sym;
+					symbol_table_insert(&symbol_table, sym);
 				}
 			}
 			

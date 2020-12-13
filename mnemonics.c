@@ -29,10 +29,10 @@ mnemonic mnemonics[] =
 	{"PHI",1,gp_register,0xb0,0},
 	{"LDN",1,gp_register,0x00,0},
 	{"LDA",1,gp_register,0x40,0},
-	{"LDXA",1,gp_register,0x72,0},
+	{"LDXA",1,none,0x72,0},
 	{"LDI",2,byte,0xf8,0},
 	{"STR",1,gp_register,0x50,0},
-	{"STRX",1,gp_register,0x73,0},
+	{"STXD",1,none,0x73,0},
 
 	//short branches
 	{"BR",2,byte,0x30,1},
