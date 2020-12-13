@@ -4,107 +4,63 @@
 #include "mnemonics.h"
 #include "symbol.h"
 #include "ctype.h"
+#include "evaluate.h"
+
 int get_argint(const char *arg, mnemonic *mne, int addr, symbol *symbol_table)
 {
 	
 	int output = 0;
 	int count;
 	char *endptr;
+	int argint;
 	symbol *sym;
+	char reg_buf[20];
+	sscanf(arg, "%s", reg_buf);
+
 	switch(mne->type) {
 		case none:
 			output = -1;
 			break;
 
 		case gp_register:
-			if(strlen(arg)!=2) {	
+			if(strlen(reg_buf)!=2) {	
 				fprintf(stdout,"argument not register\n");
 				output = -1;
 				break;
 			}
 			
-			if(arg[0]!='r' && arg[0]!='R'){
+			if(reg_buf[0]!='r' && reg_buf[0]!='R'){
 				fprintf(stderr,"argument not register\n");
 				output = -1;
 				break;
 			}
 			
-			if(arg[1] >= '0' && arg[1] <='9') output = arg[1] - '0';
-			else if(arg[1] >= 'a' && arg[1] <='f') output = arg[1] - 'a' + 10;
-			else if(arg[1] >= 'A' && arg[1] <='F') output = arg[1] - 'A' + 10;
+			if(reg_buf[1] >= '0' && reg_buf[1] <='9') output = reg_buf[1] - '0';
+			else if(reg_buf[1] >= 'a' && reg_buf[1] <='f') output = reg_buf[1] - 'a' + 10;
+			else if(reg_buf[1] >= 'A' && reg_buf[1] <='F') output = reg_buf[1] - 'A' + 10;
 			else {
 				fprintf(stderr,"argument not register\n");
 				output = -1;
-				break;
 			}
 
 			break;	
-		case byte:
-
-			if(isalpha(arg[0])) {
-				fprintf(stderr, "ERROR: 16 bit symbol passed as 8 bit argument\n");
-				return -1;
-			} else if(arg[0] == '^' || arg[0] == '_') {
-				sym = symbol_search(symbol_table, &arg[1]);
-				if(sym == NULL) {
-					fprintf(stderr,"ERROR: symbol %s doesn't exist",&arg[1]);
+	
+		default:
+			output = evaluate(arg, symbol_table);
+			printf("output = %d\n",output);
+			if(mne->type ==byte){
+				if(output > 255 || output < 0) {
 					output = -1;
-				} else {
-					if(arg[0] == '^') output = (sym->address >> 8);
-					if(arg[0] == '_') {
-						output = (sym->address & 0xff);
-						if( mne->isshortbranch && 
-						  ((addr+1) &0xff00) != (sym->address & 0xff00)){
-							fprintf(
-								stderr, 
-								"WARNING: short jump to low byte of symbol on a different page\n"
-							);
-							printf("%x vs %x\n",address + 1, sym->address);
-						}		
-					}
-					
+					fprintf(stderr,"argument not byte (out of range) \n");
 				}
-				break;
 			}
-			
-			output = strtol(arg, &endptr, 0);
-
-			
-			if(*endptr != '\0'){
-				output = -1;
-				fprintf(stderr,"argument not byte\n");
-				break;
-			}
-
-			if(output > 255 || output < 0) {
-				output = -1;
-				fprintf(stderr,"argument not byte (out of range) \n");
-			}
-			break;
-
-		case address:
-			if(isalpha(arg[0])) {
-				sym = symbol_search(symbol_table, arg);
-				if(sym == NULL) {
-					fprintf(stderr,"ERROR: symbol %s doesn't exist", arg);
+			if(mne->type == address){
+				if(output > 0xffff || output < 0) {
 					output = -1;
-				} else {
-					output = sym->address;
+					fprintf(stderr,"argument not address (out of range)\n");
 				}
-				break;
 			}
 
-			output = strtol(arg, &endptr, 0);
-			
-			if(*endptr != '\0'){
-				output = -1;
-				fprintf(stderr,"argument not address\n");
-			}
-			
-			if(output > 0xffff || output < 0) {
-				output = -1;
-				fprintf(stderr,"argument not address (out of range)\n");
-			}
 			break;
 	}
 

@@ -1,6 +1,6 @@
 
 
-elfasm : process.o assemble.o mnemonics.o symbol.o
+elfasm : process.o assemble.o mnemonics.o symbol.o evaluate.o
 	$(CC) $^ -o $@
 
 %.o : %.c

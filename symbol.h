@@ -6,6 +6,7 @@
 typedef struct _symbol
 {
 	char name[SYMBOL_NAME_LEN]; //more than plenty imo
+	unsigned int length;
 	unsigned int address;
 	struct _symbol *next;
 } symbol;

@@ -20,6 +20,7 @@ symbol *symbol_new(const char *name, unsigned int address)
 
 	sym->address = address;
 	sym->next = NULL;
+	sym->length = name_len;
 	strncpy(sym->name, name, name_len);
 
 	return sym;
@@ -41,7 +42,7 @@ symbol *symbol_search(symbol *first, const char *name)
 	}
 	
 	for(sym=first; sym!=NULL; sym=sym->next) {
-		if(strncmp(sym->name, name, SYMBOL_NAME_LEN) == 0){
+		if(strncmp(sym->name, name, sym->length) == 0){
 			return sym;
 		}
 	}

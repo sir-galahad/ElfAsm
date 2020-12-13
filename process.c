@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include "symbol.h"
 #include "assemble.h"
+
 typedef struct _linedata
 {
 	char *label;
@@ -32,26 +33,27 @@ int split_line(char *line, linedata *data)
 			endline = 1;
 		}
 
-		if(inword && !isalnum(line[i]) && line[i] != '_' && line[i] != '^'){
+		if(inword && !isalnum(line[i]) && line[i]){
 			if(data->mnemonic == NULL && line[i] == ':'){
 				data->label = start;
 				line[i]='\0';
 			} else if(data->mnemonic == NULL) {
 				data->mnemonic = start;
 				line[i]='\0';
-			} else if(data->arg[0] == '\0') {
-				data->arg = start;
-				line[i]='\0';
-			} else {
-				fprintf(stderr,"Unable to parse line: too many elements\n");
-				return -1;
-			}
+				data->arg = &line[i+1];
+			}	
 
 			inword = 0;
 		}
 		
 		if(endline == 1) break;
 	}
+	
+	for(i = 0; data->arg[i] != 0; i++) 
+		if(data->arg[i] == ';'){
+			data->arg[i];
+			break;
+		}
 
 	return 1;
 }
