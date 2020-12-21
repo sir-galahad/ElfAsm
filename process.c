@@ -124,20 +124,19 @@ int process(const char* inputfile, const char* outputfile)
 						return -1;
 					}
 					
-					printf("adding symbol: %s\n",data.label);
 					sym=symbol_new(data.label, address);
 					symbol_table_insert(&symbol_table, sym);
 				}
 			}
 			
 			if(i == 1 && mne != NULL){
-				printf(
+				/*printf(
 					"%s:%d %s %s\n",
 					inputfile,
 					linenum,
 					data.mnemonic,
 					data.arg
-				);
+				);*/
 				if(mnemonic_getbytes(mne, buffer, data.arg, address, symbol_table) < 0) {
 					fprintf(stderr,"ERROR assembling %s:%d\n",inputfile,linenum);
 					return -1;

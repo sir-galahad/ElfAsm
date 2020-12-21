@@ -77,7 +77,6 @@ int evaluate(const char *exp, symbol *symbol_table)
 				if( exp[i] == '(') parencount++;
 				if( exp[i] == ')') parencount--;
 				if( parencount == 0) {
-					printf("%s\n",buffer);
 					num = evaluate(buffer,symbol_table);
 					break;
 				}
@@ -133,8 +132,8 @@ int evaluate(const char *exp, symbol *symbol_table)
 		if( isalpha(exp[i] )) {
 			sym = symbol_search(symbol_table, &exp[i], 1);
 			if(sym == NULL) {
-				fprintf(stderr, "ERROR: alphabeta characters not a symbol\n");
-				exit(1);
+				fprintf(stderr, "ERROR: alphabetical characters not a symbol\n");
+				return  -1;
 			} else {
 				num = sym->address;
 				el=expel_new(0,num);
