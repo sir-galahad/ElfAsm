@@ -18,7 +18,7 @@
 //the head of the list with the result of the expression.
 
 enum {none, number, operation};
-enum {nop, multiply, divide, add, subtract, nul};
+enum {nop, high_byte, low_byte, not, multiply, divide, modulo, add, subtract, and, or, xor, shift_left, shift_right, nul};
 
 typedef struct _expression_element
 {
@@ -38,13 +38,26 @@ expel *expel_new(int isoperator, int value)
 	el->next = NULL;
 }
 
+int get_unary_operator(char c)
+{
+	if(c == '^') return high_byte;
+	if(c == '_') return low_byte;
+	if(c == '~') return not;
+	return nop;
+}
+
 int get_operator(char c)
 {
 	if(c == '*') return multiply;
 	if(c == '/') return divide;
 	if(c == '+') return add;
 	if(c == '-') return subtract;
-
+	if(c == '%') return modulo;
+	if(c == '&') return and;
+	if(c == '|') return or;
+	if(c == '^') return xor;
+	if(c == '<') return shift_left;  //i'm not implementing greater than or less than
+	if(c == '>') return shift_right;  //so i'm repurposing for shift left and shift right
 	return nop;
 }
 
@@ -97,8 +110,20 @@ int evaluate(const char *exp, symbol *symbol_table)
 			}
 			continue;
 		} 
-
-		if((operator = get_operator(exp[i])) != none) {
+		
+		
+		if((tail == NULL || tail->isoperator) && ((operator = get_unary_operator(exp[i])) != nop)) {
+			el=expel_new(1,operator);
+			if(head == NULL) head=el;
+			if(tail == NULL) tail=el;
+			else {
+				tail->next=el;
+				tail=el;
+			}
+			continue;
+		}
+	
+		if((operator = get_operator(exp[i])) != nop) {
 			el=expel_new(1,operator);
 			if(head == NULL) head=el;
 			if(tail == NULL) tail=el;
@@ -109,26 +134,6 @@ int evaluate(const char *exp, symbol *symbol_table)
 			continue;
 		}
 
-		if(exp[i] == '^' || exp[i] == '_') {
-			sym = symbol_search(symbol_table, &exp[i+1], 1);
-			if(sym == NULL) {
-				fprintf(stderr, "ERROR: byte specifier used without symbol\n");
-				exit(1);
-			} else {
-				if(exp[i] == '^') num = (sym->address >> 8);
-				if(exp[i] == '_') num = (sym->address & 0xff);
-				el=expel_new(0,num);
-				if(head == NULL) head=el;
-				if(tail == NULL) tail=el;
-				else {
-					tail->next=el;
-					tail=el;
-				}
-				i += sym->length;
-			}
-			continue;
-		}
-		
 		if( isalpha(exp[i] )) {
 			sym = symbol_search(symbol_table, &exp[i], 1);
 			if(sym == NULL) {
@@ -148,9 +153,6 @@ int evaluate(const char *exp, symbol *symbol_table)
 			continue;
 		}
 
-
-			
-		
 		//if not whitespace paren or operator that leaves only values
 		
 		num = strtol(&exp[i], &endptr,0);
@@ -169,49 +171,152 @@ int evaluate(const char *exp, symbol *symbol_table)
 		}
 	}
 
-	for(i=0; i<2; i++) {
+	for(i=0; i<5; i++) {
 		el=head;
-		while(el!=NULL){
-			if(el->next!=NULL && el->next->isoperator){
-				valuechanged = 0;
-				switch(i) {
-					case 0:
-						if(el->next->value == multiply){
-							el->value *= el->next->next->value;
-							valuechanged = 1;
-						}
-						if(el->next->value == divide){
-							el->value /= el->next->next->value;
-							valuechanged = 1;
-						}
-						if(valuechanged) {
-							tmp=el->next;
-							el->next = el->next->next->next;
-							free(tmp->next);
-							free(tmp);
-							continue;
-						}
+		while(el!=NULL && el->next!=NULL){
+			//if(el->next!=NULL && el->next->isoperator){
+			valuechanged = 0;
+			switch(i) {
+				////UNARY OPERATORS NEED WORK
+				case 0: //unary operators
+					for(;el->next != NULL && el->next->isoperator; el=el->next);
+
+					if(el->next == NULL) break;
+					
+					if(el->isoperator && el->value == not){
+						el->value = ~el->next->value;
+						el->isoperator=0;
+						valuechanged = 1;
+					}
+					if(el->isoperator && el->value == high_byte){
+						el->value = (el->next->value >> 8);
+						el->isoperator=0;
+						valuechanged = 1;
+					}
+					if(el->isoperator && el->value == low_byte){
+						el->value = (el->next->value & 0xff);
+						el->isoperator=0;
+						valuechanged = 1;
+					}
+					if(valuechanged) {
+						tmp=el->next;
+						el->next = el->next->next;
+						free(tmp);
+						el=head;
+						continue;
+					}
+					break;
+			
+				case 1:
+				    //cases 1 and up should have only binary operators
+					if(     el->isoperator || 
+							el->next == NULL || !el->next->isoperator || 
+							el->next->next==NULL || el->next->next->isoperator) {
 						break;
-					case 1:
-						if(el->next->value == add){
-							el->value += el->next->next->value;
-							valuechanged = 1;
-						}
-						if(el->next->value == subtract){
-							el->value -= el->next->next->value;
-							valuechanged = 1;
-						}
-						if(valuechanged) {
-							tmp=el->next;
-							el->next = el->next->next->next;
-							free(tmp->next);
-							free(tmp);
-							continue;
-						}
+					}
+
+					if(el->next != NULL && el->next->value == multiply){
+						el->value *= el->next->next->value;
+						valuechanged = 1;
+					}
+					if(el->next != NULL && el->next->value == divide){
+						el->value /= el->next->next->value;
+						valuechanged = 1;
+					}
+					if(el->next != NULL && el->next->value == modulo){
+						el->value %= el->next->next->value;
+						valuechanged = 1;
+					}
+					if(valuechanged) {
+						tmp=el->next;
+						el->next = el->next->next->next;
+						free(tmp->next);
+						free(tmp);
+						continue;
+					}
+					break;
+
+				case 2:
+				    //cases 1 and up should have only binary operators
+					if(     el->isoperator || 
+							el->next == NULL || !el->next->isoperator || 
+							el->next->next==NULL || el->next->next->isoperator) {
 						break;
-				}
+					}
+
+					if(el->next != NULL && el->next->value == add){
+						el->value += el->next->next->value;
+						valuechanged = 1;
+					}
+					if(el->next != NULL && el->next->value == subtract){
+						el->value -= el->next->next->value;
+						valuechanged = 1;
+					}
+					if(valuechanged) {
+						tmp=el->next;
+						el->next = el->next->next->next;
+						free(tmp->next);
+						free(tmp);
+						continue;
+					}
+					break;
+
+				case 3:
+				    //cases 1 and up should have only binary operators
+					if(     el->isoperator || 
+							el->next == NULL || !el->next->isoperator || 
+							el->next->next==NULL || el->next->next->isoperator) {
+						break;
+					}
+
+					if(el->next != NULL && el->next->value == shift_left){
+						el->value <<= el->next->next->value;
+						valuechanged = 1;
+					}
+					if(el->next != NULL && el->next->value == shift_right){
+						el->value >>= el->next->next->value;
+						valuechanged = 1;
+					}
+					if(valuechanged) {
+						tmp=el->next;
+						el->next = el->next->next->next;
+						free(tmp->next);
+						free(tmp);
+						continue;
+					}
+					break;
+
+				case 4:
+				    //cases 1 and up should have only binary operators
+					if(     el->isoperator || 
+							el->next == NULL || !el->next->isoperator || 
+							el->next->next==NULL || el->next->next->isoperator) {
+						break;
+					}
+
+					if(el->next != NULL && el->next->value == and){
+						el->value &= el->next->next->value;
+						valuechanged = 1;
+					}
+					if(el->next != NULL && el->next->value == or){
+						el->value |= el->next->next->value;
+						valuechanged = 1;
+					}
+					if(el->next != NULL && el->next->value == xor){
+						el->value ^= el->next->next->value;
+						valuechanged = 1;
+					}
+					if(valuechanged) {
+						tmp=el->next;
+						el->next = el->next->next->next;
+						free(tmp->next);
+						free(tmp);
+						continue;
+					}
+					break;
+
 			}
-			el=el->next;
+		el=el->next;
 		}
 	}
 	i = head->value;
