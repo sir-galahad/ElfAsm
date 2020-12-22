@@ -101,9 +101,9 @@ int process(const char* inputfile, const char* outputfile)
 					return -1;
 				}
 				if( strcmp(mne->name, "ORG")==0 ) {
-					tmp=get_argint(data.arg, mne, address, symbol_table);
-					if(tmp >= 0) address=tmp;
-					else {
+					if(parse_address(data.arg, &tmp, symbol_table) > 0) {
+						address=tmp;
+					} else {
 						fprintf(
 							stderr,"%s:%d ERROR bad argument to ORG",
 							inputfile,
