@@ -63,18 +63,19 @@ int get_operator(char c)
 
 
 
-int evaluate(const char *exp, symbol *symbol_table) 
+int evaluate(const char *exp, int *result, symbol *symbol_table) 
 {
 	expel *head = NULL;
 	expel *tail = NULL;
 	expel *el, *tmp;
-	int i,num, valuechanged;
+	int i, num, valuechanged;
 	char buffer[200];
 	int bufpos = 0;
 	int parencount;
 	int operator;
 	char *endptr;
 	symbol *sym;
+	int recurse_result;
 	for(i = 0; exp[i] != '\0'; i++) {
 		if( exp[i] == '\t' || exp[i]  == ' ' || exp[i] == '\n') continue;
 		if( exp[i] == ')' ) {
@@ -90,7 +91,9 @@ int evaluate(const char *exp, symbol *symbol_table)
 				if( exp[i] == '(') parencount++;
 				if( exp[i] == ')') parencount--;
 				if( parencount == 0) {
-					num = evaluate(buffer,symbol_table);
+					if(evaluate(buffer, &num, symbol_table) < 0) {
+						return -1; //recursive call should have printed error
+					}
 					break;
 				}
 				buffer[bufpos++] = exp[i];
@@ -321,7 +324,8 @@ int evaluate(const char *exp, symbol *symbol_table)
 	}
 	i = head->value;
 	free(head);
-	return i;
+	*result = i;
+	return 1;
 }
 
 

@@ -17,6 +17,7 @@ int split_line(char *line, linedata *data)
 	int len,i,endline=0;
 	char *start;
 	int inword = 0;
+	int instring = 0;
 	len = strlen(line);
 	for(i = 0; i < len; i++) {
 		
@@ -65,7 +66,7 @@ int process(const char* inputfile, const char* outputfile)
 	char empty[] = "";
 	char buffer[10];
 	unsigned char line[512];
-	int i,tmp;
+	int i, tmp, size;
 	symbol *sym;
 
 	if(output == NULL) {
@@ -137,14 +138,25 @@ int process(const char* inputfile, const char* outputfile)
 					data.mnemonic,
 					data.arg
 				);*/
-				if(mnemonic_getbytes(mne, buffer, data.arg, address, symbol_table) < 0) {
-					fprintf(stderr,"ERROR assembling %s:%d\n",inputfile,linenum);
+				if((size = mnemonic_getbytes(mne, buffer, data.arg, address, symbol_table)) < 0) {
+					fprintf(stderr,"ERROR2 assembling %s:%d\n",inputfile,linenum);
 					return -1;
 				}
-				fwrite(buffer, mne->opsize, 1, output);
+				//if(mne->opsize >= 0 ) size = mne->opsize;
+				fwrite(buffer, size, 1, output);
 			}
 			if(mne != NULL) {
-				address += mne->opsize;
+
+				if(mne->opsize < 0) {
+					size = mnemonic_getbytes(mne, NULL, data.arg, address, symbol_table); 
+					if(size < 0) {
+						fprintf(stderr,"ERROR1 assembling %s:%d\n",inputfile,linenum);
+						return -1;
+					}
+				} else {
+					size = mne->opsize;
+				}
+				address += size;
 			}
 		}
 		fclose(input);

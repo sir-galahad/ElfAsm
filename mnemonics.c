@@ -1,5 +1,9 @@
 #include "mnemonics.h"
 #include <string.h>
+#include <ctype.h>
+#include <stdio.h>
+#include "evaluate.h"
+
 mnemonic *get_mnemonic_data(const char* name)
 {
 	int i;
@@ -136,8 +140,112 @@ mnemonic mnemonics[] =
 	{"ORG",0,address,0,0},
 	{"DB",1,byte,0,0},
 	{"DD",2,address,0,0},
+	{"DS",-1,string,0,0},
 	//Mark the end of the array
 	{"\0",0,none,0,0}
-,0};
 
+};
 
+int parse_register(const char *str, int *reg)
+{
+	int i, regnum;
+	int stlen = strlen(str);
+	
+	for(i = 0; i < stlen; i++) {
+		if( str[i] != ' ' && str[i] != '\t') { //there are other whitespace symbols but...
+			break;
+		}
+	}
+	
+	//check first non-whitespace char is r or R
+	if(i >= stlen || (str[i]!='r' && str[i]!='R')){
+		fprintf(stderr, "ERROR: register expected\n");
+		return -1;
+	}
+
+	i++;
+	regnum = toupper(str[i]);
+
+	if( (regnum >= '0' && regnum <='9') || (regnum >= 'A' && regnum <= 'F') ) {
+		if(regnum >= '0' && regnum <='9') {
+			regnum -= '0';
+		} else if(regnum >= 'A' && regnum <= 'F') {
+			regnum = (regnum - 'A') + 10;
+		}
+	} else {
+		fprintf(stderr, "ERROR: register expected\n");
+	}
+	
+	for(i++ ;i < stlen; i++) {
+		if( str[i] == ';') break; //if we hit the start of a comment it's over
+		if( str[i] != ' ' && str[i] != '\t' && str[i] != '\n') { //there are other whitespace symbols but...
+			fprintf(stderr, "ERROR: extra character %c after register found\n", str[i]);
+			return -1;
+		}
+	}
+	*reg = regnum;
+	return regnum;
+}
+
+int parse_byte(const char *str, int *byte, symbol *symbol_table)
+{
+	return evaluate(str,byte,symbol_table);
+}
+
+int parse_address(const char *str, int *address, symbol *symbol_table)
+{
+	return evaluate(str,address,symbol_table);
+}
+
+int parse_string(const char *str, char *buffer, int len) 
+{
+	int i, bi, closed = 0;
+	int stlen = strlen(str);
+
+	for(i = 0; i < stlen; i++) {
+		if( str[i] != ' ' && str[i] != '\t') { //there are other whitespace symbols but...
+			break;
+		}
+	}
+	
+	//check first non-whitespace char is r or R
+	if(i >= stlen || str[i]!='"'){
+		fprintf(stderr, "ERROR: string expected\n");
+		return -1;
+	}
+
+	for( i++, bi = 0; i< stlen; i++, bi++) {
+		if( bi==len){
+			fprintf(stderr, "ERROR: string exceeds buffer length\n");
+			return -1;
+		}
+		if(str[i] == '"') {
+			closed = 1;
+			break;
+		}
+
+		if(str[i] == '\\' && buffer != NULL) {
+			i++;
+			if(str[i] == '"') buffer[bi] = '"';
+			if(str[i] == '\\') buffer[bi] = '\\';
+			if(str[i] == 't') buffer[bi] = '\t';
+			if(str[i] == 'n') buffer[bi] = '\n';
+			//probably other escapes i should add, but i can't be bothered right now.
+		}else{
+			if(buffer != NULL) buffer[i] = str[i];
+		}
+	}
+	if(!closed) {
+		fprintf(stderr, "ERROR: string unclosed at end of line\n");
+		return -1;
+	}
+
+	for( i++; i < stlen; i++) {
+		if( str[i] == ';') break; //if we hit the start of a comment it's over
+		if( str[i] != ' ' && str[i] != '\t' && str[i] != '\n') { //there are other whitespace symbols but...
+			fprintf(stderr, "ERROR: extra characters after string\n");
+			return -1;
+		}
+	}
+	return bi;
+}
