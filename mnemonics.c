@@ -232,7 +232,8 @@ int parse_string(const char *str, char *buffer, int len)
 			if(str[i] == 'n') buffer[bi] = '\n';
 			//probably other escapes i should add, but i can't be bothered right now.
 		}else{
-			if(buffer != NULL) buffer[i] = str[i];
+
+			if(buffer != NULL) buffer[bi] = str[i];
 		}
 	}
 	if(!closed) {
