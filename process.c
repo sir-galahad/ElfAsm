@@ -34,7 +34,7 @@ int split_line(char *line, linedata *data)
 			endline = 1;
 		}
 
-		if(inword && !isalnum(line[i]) && line[i] != '_' && line[i]){
+		if(inword && !isalnum(line[i]) && line[i] != '_' ){
 			if(data->mnemonic == NULL && line[i] == ':'){
 				data->label = start;
 				line[i]='\0';
@@ -100,6 +100,7 @@ int process(const char* inputfile, const char* outputfile)
 					);
 					return -1;
 				}
+				printf("%s\n",mne->name);
 				if( strcmp(mne->name, "ORG")==0 ) {
 					if(parse_address(data.arg, &tmp, symbol_table) > 0) {
 						address=tmp;
@@ -163,6 +164,7 @@ int process(const char* inputfile, const char* outputfile)
 	}
 	
 	fclose(output);
+	symbol_dump(symbol_table);
 	return 0;
 }
 

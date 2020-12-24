@@ -76,3 +76,12 @@ symbol *symbol_search(symbol *first, const char *name, int lazy)
 	}
 	return NULL;
 }
+
+void *symbol_dump(symbol *symbol_table)
+{
+	symbol *sym;
+	for(sym=symbol_table; sym!=NULL; sym=sym->next) {
+		printf("%s=%X\n",sym->name,sym->address);
+	}
+}
+

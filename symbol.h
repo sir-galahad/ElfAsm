@@ -15,4 +15,5 @@ symbol *symbol_new(const char* name, unsigned int address);
 void symbol_destroy(symbol *sym);
 symbol *symbol_search(symbol *first, const char *name, int lazy);
 void symbol_table_insert(symbol **symbol_table, symbol *sym);
+void *symbol_dump(symbol *symbol_table);
 #endif
